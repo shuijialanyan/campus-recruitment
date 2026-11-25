@@ -515,7 +515,7 @@ function renderStats() {
   const batches = {};
   jobs.forEach(j => (j.批次 || []).forEach(b => batches[b] = (batches[b] || 0) + 1));
   const stats = [
-    { label: '在招岗位总数', value: total, color: '#2563eb', action: 'resetFilters()' },
+    { label: '岗位记录总数', value: total, color: '#2563eb', action: 'resetFilters()' },
     { label: '7天内即将截止', value: upcoming, color: '#dc2626', action: 'filterUpcoming()' },
   ];
   const batchOrder = ['秋招', '实习', '暑期实习', '日常实习', '春招', '秋招提前批', '寒假实习'];
@@ -548,6 +548,13 @@ function filterByBatch(batch) {
 
 function renderHome() {
   renderStats();
+  if (!document.getElementById('recruitmentSourceNote')) {
+    const note = document.createElement('div');
+    note.id = 'recruitmentSourceNote';
+    note.style.cssText = 'padding:12px 16px;margin:12px 0;color:#475569;background:#eff6ff;border-radius:8px;font-size:13px;line-height:1.8';
+    note.textContent = '数据来源：HU-eun/campus-recruitment 公开招聘数据，并合并个人飞书补充。每天北京时间10点检查更新（调度可能延迟）。收录包含历史招聘；未注明截止日期不代表仍在招聘，请以岗位详情中的官方公告为准。';
+    document.getElementById('jobList').before(note);
+  }
   applyFilters();
 }
 
