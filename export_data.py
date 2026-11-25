@@ -74,7 +74,44 @@ def records_to_objects(records, fields):
             objects.append(obj)
     return objects
 
+
+def fetch_public_jobs():
+    response = requests.get('https://api.github.com/repos/HU-eun/campus-recruitment/commits/main', timeout=60)
+    response.raise_for_status()
+    sha = response.json()['sha']
+    root = f'https://raw.githubusercontent.com/HU-eun/campus-recruitment/{sha}/data/'
+    response = requests.get(root + 'jobs.json', timeout=120)
+    response.raise_for_status()
+    rows = response.json()
+    if not isinstance(rows,list) or len(rows) < 1000 or not all(isinstance(row,dict) for row in rows):
+        raise ValueError('公开招聘源异常，停止发布并保留现有数据')
+    response = requests.get(root + 'summary.json', timeout=60)
+    response.raise_for_status()
+    source_summary = response.json()
+    if source_summary.get('jobs_count') != len(rows):
+        raise ValueError('公开源统计与数据不一致，停止发布')
+    return rows, {'repository': 'HU-eun/campus-recruitment', 'commit': sha, 'update_time': source_summary.get('update_time'), 'raw_count': len(rows)}
+
+def merge_jobs(public_rows, personal_rows):
+    merged = {}
+    for source, rows in [('原项目公开招聘数据',public_rows),('个人飞书补充',personal_rows)]:
+        normalized = records_to_objects([{'fields':row} for row in rows], TABLES['jobs']['fields'])
+        for row in normalized:
+            company = row['公司名称'].strip()
+            if company.startswith('【同步测试】') or '筛选前必看' in company:
+                continue
+            if '这是同步测试，不是真实招聘岗位' in row['招聘岗位']:
+                continue
+            key = json.dumps([row.get(field) for field in ('公司名称','招聘岗位','官方公告','截止时间','批次','招聘对象')], ensure_ascii=False, sort_keys=True)
+            row['_数据来源'] = source
+            merged[key] = row
+    jobs = list(merged.values())
+    if len(jobs) < 1000:
+        raise ValueError('合并后岗位数量异常，停止发布')
+    return jobs
+
 def main():
+    public_rows, public_source = fetch_public_jobs()
     token = get_tenant_access_token()
     os.makedirs('data', exist_ok=True)
     all_data = {}
@@ -84,9 +121,8 @@ def main():
                 all_data[key] = json.load(f)
             continue
         objects = records_to_objects(get_table_records(token, config['table_id']), config['fields'])
-        if key == 'jobs' and not objects:
-            raise ValueError('招聘表为空或缺少公司名称字段；停止更新，保留现有数据')
         all_data[key] = objects
+    all_data['jobs'] = merge_jobs(public_rows, all_data['jobs'])
     for key, objects in all_data.items():
         with open(f'data/{key}.json', 'w', encoding='utf-8') as f:
             json.dump(objects, f, ensure_ascii=False, indent=2)
@@ -96,6 +132,7 @@ def main():
             json.dump(objects, f, ensure_ascii=False)
             f.write(';\n')
     summary = {f'{key}_count': len(value) for key,value in all_data.items()}
+    summary['public_source'] = public_source
     summary['update_time'] = datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
     with open('data/summary.json','w',encoding='utf-8') as f:
         json.dump(summary,f,ensure_ascii=False,indent=2)
