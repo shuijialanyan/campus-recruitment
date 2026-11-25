@@ -1,40 +1,47 @@
-name: 每周二四六自动更新校招数据
-
+name: 每天自动更新校招数据
 on:
   schedule:
-    - cron: '0 2 * * 2,4,6'  # 每周二、四、六北京时间10点（UTC 2点）自动运行
-  workflow_dispatch:  # 允许手动触发
-
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 permissions:
-  contents: write  # 允许推送更新后的数据
-
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 设置Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: 安装依赖
-        run: |
-          pip install requests
-
-      - name: 运行数据导出脚本
+        run: pip install requests
+      - name: 从飞书同步数据
         env:
           LARK_APP_ID: ${{ secrets.LARK_APP_ID }}
           LARK_APP_SECRET: ${{ secrets.LARK_APP_SECRET }}
           BASE_TOKEN: ${{ secrets.BASE_TOKEN }}
+          JOBS_TABLE_ID: ${{ vars.JOBS_TABLE_ID }}
+          MAJORS_TABLE_ID: ${{ vars.MAJORS_TABLE_ID }}
+          PLATFORMS_TABLE_ID: ${{ vars.PLATFORMS_TABLE_ID }}
+          RESOURCES_TABLE_ID: ${{ vars.RESOURCES_TABLE_ID }}
+        run: python export_data.py
+      - name: 保存数据
         run: |
-          python export_data.py
-
-      - name: 提交并推送更新
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
           git add data/
-          git diff --staged --quiet || (git commit -m "自动更新校招数据 $(date +'%Y-%m-%d')" && git push)
+          git diff --staged --quiet || (git commit -m '自动更新校招数据' && git push)
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - uses: actions/deploy-pages@v4
+        id: deployment
