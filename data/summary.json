@@ -1,7 +1,13 @@
 {
-  "jobs_count": 1,
+  "jobs_count": 11093,
   "majors_count": 93,
   "platforms_count": 49,
   "resources_count": 8,
-  "update_time": "2026-11-25 23:01:12"
+  "public_source": {
+    "repository": "HU-eun/campus-recruitment",
+    "commit": "15c07c96b08c978ea521549174bf79bc85ae341c",
+    "update_time": "2026-11-24 12:07:41",
+    "raw_count": 11291
+  },
+  "update_time": "2026-11-25 23:14:26"
 }
