@@ -11,11 +11,8 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  update-data:
+  sync:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -40,8 +37,15 @@ jobs:
           git add data/
           git diff --staged --quiet || (git commit -m '自动更新校招数据' && git push)
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: '.'
-      - uses: actions/deploy-pages@v4
+  deploy:
+    needs: sync
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5.0.1
         id: deployment
