@@ -559,12 +559,13 @@ function renderHome() {
 }
 
 const platformSites = {'中华人民共和国人力资源和社会保障部':'https://www.mohrss.gov.cn/','国务院国有资产监督管理委员会':'https://www.sasac.gov.cn/','国家大学生就业服务平台':'https://www.ncss.cn/','中国公共招聘网':'https://job.mohrss.gov.cn/','中国铁路人才招聘网':'https://rczp.china-railway.com.cn/','国家电网有限公司招聘平台':'https://zhaopin.sgcc.com.cn/','南方电网招聘平台':'https://zhaopin.csg.cn/','实习僧':'https://www.shixiseng.com/','应届生求职网':'https://www.yingjiesheng.com/','前程无忧':'https://www.51job.com/','智联招聘':'https://www.zhaopin.com/','BOSS直聘':'https://www.zhipin.com/','国聘网':'https://www.iguopin.com/'};
+Object.assign(platformSites, {"中国核工业集团有限公司":"http://www.cnnc.com.cn/","中国航天科技集团有限公司":"http://www.spacechina.com/","中国航天科工集团有限公司":"http://www.casic.com.cn/","中国航空工业集团有限公司":"http://www.avic.com.cn/","中国船舶集团有限公司":"http://www.cssc.net.cn/","中国兵器工业集团有限公司":"http://www.norincogroup.com.cn/","中国兵器装备集团有限公司":"http://www.csgc.com.cn/","中国电子科技集团有限公司":"http://www.cetc.com.cn/","中国航空发动机集团有限公司":"http://www.aecc.cn/","中国石油天然气集团有限公司":"http://www.cnpc.com.cn/","中国石油化工集团有限公司":"http://www.sinopecgroup.com/","中国海洋石油集团有限公司":"http://www.cnooc.com.cn/","国家石油天然气管网集团有限公司":"http://www.pipechina.com.cn/","国家电网有限公司":"http://www.sgcc.com.cn/","中国南方电网有限责任公司":"http://www.csg.cn/","中国华能集团有限公司":"http://www.chng.com.cn/","中国大唐集团有限公司":"http://www.china-cdt.com/","中国华电集团有限公司":"http://www.chd.com.cn/","国家电力投资集团有限公司":"http://www.spic.com.cn/","中国长江三峡集团有限公司":"http://www.ctg.com.cn/","国家能源投资集团有限责任公司":"http://www.ceic.com/","中国电信集团有限公司":"http://www.chinatelecom.com.cn/","中国联合网络通信集团有限公司":"http://www.chinaunicom.com.cn/","中国移动通信集团有限公司":"http://www.10086.cn/","中国电子信息产业集团有限公司":"http://www.cec.com.cn/","中国第一汽车集团有限公司":"http://www.faw.com.cn/","东风汽车集团有限公司":"http://www.dfmc.com.cn/","中国一重集团有限公司":"http://www.cfhi.com/","中国机械工业集团有限公司":"http://www.sinomach.com.cn/","哈尔滨电气集团有限公司":"http://www.harbin-electric.com/","中国东方电气集团有限公司":"http://www.dongfang.com/","鞍钢集团有限公司":"http://www.ansteel.cn/","中国宝武钢铁集团有限公司":"http://www.baowugroup.com/","中国铝业集团有限公司":"https://www.chinalco.com.cn/","中国远洋海运集团有限公司":"http://www.coscoshipping.com/","中国航空集团有限公司":"http://www.airchinagroup.com/","中国东方航空集团有限公司":"http://www.ceair.com/","中国南方航空集团有限公司":"http://www.csair.cn/","中国中化控股有限责任公司":"http://www.sinochem.com/","中粮集团有限公司":"http://www.cofco.com/","中国五矿集团有限公司":"http://www.minmetals.com.cn/","中国通用技术（集团）控股有限责任公司":"http://www.gt.cn/","中国建筑集团有限公司":"http://www.cscec.com/","中国储备粮管理集团有限公司":"http://www.sinograin.com.cn/","中国南水北调集团有限公司":"http://www.csnwd.com.cn/","国家开发投资集团有限公司":"http://www.sdic.com.cn/","猎聘":"https://www.liepin.com/","牛客网":"https://www.nowcoder.com/"});
 function platformLink(name) {
   const known = platformSites[name];
   if (known) return {url:known, label:'官网'};
   const found = extractUrl(name);
   if (found !== '#') return {url:found, label:'原始链接'};
-  return {url:'https://www.baidu.com/s?wd='+encodeURIComponent(name+' 招聘 官网'),label:'搜索招聘官网'};
+  return null;
 }
 
 // ========== 平台导航 ==========
@@ -579,7 +580,7 @@ function renderPlatforms() {
     { key: '综合平台', title: '🔗 综合招聘平台' },
   ];
   container.innerHTML = categories.map(cat => {
-    const items = platforms.filter(p => p[cat.key]);
+    const items = platforms.filter(p => p[cat.key] && platformLink(p[cat.key]));
     if (items.length === 0) return '';
     return `<div class="card">
       <h3 style="font-size:15px;font-weight:600;margin:0 0 12px">${cat.title} <span class="badge badge-gray">${items.length}</span></h3>
