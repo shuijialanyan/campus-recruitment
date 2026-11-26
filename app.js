@@ -558,6 +558,15 @@ function renderHome() {
   applyFilters();
 }
 
+const platformSites = {'中华人民共和国人力资源和社会保障部':'https://www.mohrss.gov.cn/','国务院国有资产监督管理委员会':'https://www.sasac.gov.cn/','国家大学生就业服务平台':'https://www.ncss.cn/','中国公共招聘网':'https://job.mohrss.gov.cn/','中国铁路人才招聘网':'https://rczp.china-railway.com.cn/','国家电网有限公司招聘平台':'https://zhaopin.sgcc.com.cn/','南方电网招聘平台':'https://zhaopin.csg.cn/','实习僧':'https://www.shixiseng.com/','应届生求职网':'https://www.yingjiesheng.com/','前程无忧':'https://www.51job.com/','智联招聘':'https://www.zhaopin.com/','BOSS直聘':'https://www.zhipin.com/','国聘网':'https://www.iguopin.com/'};
+function platformLink(name) {
+  const known = platformSites[name];
+  if (known) return {url:known, label:'官网'};
+  const found = extractUrl(name);
+  if (found !== '#') return {url:found, label:'原始链接'};
+  return {url:'https://www.baidu.com/s?wd='+encodeURIComponent(name+' 招聘 官网'),label:'搜索招聘官网'};
+}
+
 // ========== 平台导航 ==========
 function renderPlatforms() {
   const platforms = window.platformsData || [];
@@ -577,10 +586,11 @@ function renderPlatforms() {
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
         ${items.map(item => {
           const text = item[cat.key];
-          const url = extractUrl(text);
+          const destination = platformLink(text);
+          const url = destination.url;
           const name = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/https?:\/\/[^\s]+/g, '').trim();
           return `<a href="${url}" target="_blank" style="display:block;padding:12px;background:#f8fafc;border-radius:8px;text-decoration:none;color:#334155;transition:all .2s;border:1px solid #e2e8f0" onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
-            <div style="font-size:13px;font-weight:500">${name || url}</div>
+            <div style="font-size:13px;font-weight:500">${name || url} <span style="font-size:11px;color:#64748b">（${destination.label}）</span></div>
           </a>`;
         }).join('')}
       </div>
@@ -598,19 +608,19 @@ function renderMajors() {
     `<button class="btn btn-sm ${majorCategory === t ? 'btn-primary' : 'btn-secondary'}" onclick="setMajorCategory('${t}')">${t === 'all' ? '全部' : t}</button>`
   ).join('');
   let filtered = majors;
-  if (majorCategory !== 'all') filtered = majors.filter(m => (m.专业名称 || '').includes(majorCategory));
+  if (majorCategory !== 'all') filtered = majors.filter(m => ((m.专业名称 || '') + ' ' + (m.适合的岗位和公司 || '')).includes(majorCategory));
   if (search) filtered = filtered.filter(m =>
     (m.专业名称 || '').toLowerCase().includes(search) ||
     (m.适合的岗位和公司 || '').toLowerCase().includes(search)
   );
   const container = document.getElementById('majorList');
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8">没有找到相关专业</div>';
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8">未找到匹配内容。原数据缺少专业名称，可尝试搜索行业、岗位或公司关键词。</div>'; 
     return;
   }
   container.innerHTML = filtered.map(m => `
     <div class="card" style="padding:16px;margin-bottom:10px">
-      <div style="font-size:15px;font-weight:600;margin-bottom:8px">${m.专业名称 || '-'}</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">${m.专业名称 || '专业名称未提供（请按内容检索）'}</div>
       <div style="font-size:13px;color:#475569;line-height:1.8;white-space:pre-line">${m.适合的岗位和公司 || '-'}</div>
     </div>
   `).join('');
